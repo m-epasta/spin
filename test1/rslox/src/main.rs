@@ -1,36 +1,62 @@
-use std::env::args;
+use std::{
+    env,
+    fs,
+    io::{self, Write},
+    process::ExitCode,
+};
 
-fn main() {
-    use std::process::ExitCode;
+fn main() -> ExitCode {
+    let args: Vec<String> = env::args().collect();
 
-    let args: Vec<String> = args().collect();
-
-    if args.len() > 1 {
-        eprintln!("Usage: rslox <script>");
-        return ExitCode::from(64);
-    } else if args.len() == 1 {
-        runFile(&args[0]);
+    if args.len() > 2 {
+        eprintln!("Usage: rslox [script]");
+        ExitCode::from(64)
+    } else if args.len() == 2 {
+        match run_file(&args[1]) {
+            Ok(_) => ExitCode::SUCCESS,
+            Err(e) => {
+                eprintln!("{}", e);
+                ExitCode::from(65)
+            }
+        }
     } else {
-        runPrompt();
+        if let Err(e) = run_prompt() {
+            eprintln!("{}", e);
+            ExitCode::from(65)
+        } else {
+            ExitCode::SUCCESS
+        }
     }
 }
 
-fn runPrompt(path: &str) -> Result<(), std::io::Error> {
-    let mut input = String::new();
+
+fn run_file(path: &str) -> io::Result<()> {
+    let bytes = fs::read(path)?;
+    let source = String::from_utf8_lossy(&bytes);
+    run(&source);
+    Ok(())
+}
+
+fn run_prompt() -> io::Result<()> {
+    let stdin = io::stdin();
+    let mut line = String::new();
+
     loop {
         print!("> ");
-        std::io::stdin().read_line(&mut input);
-        if std::io::stdin().read_line(&mut input).is_err() { std::io::Error::from(std::io::ErrorKind::UnexpectedEof) };
-        run(&input);
+        io::stdout().flush()?; // required in Rust
+
+        line.clear();
+        if stdin.read_line(&mut line)? == 0 {
+            break; // EOF
+        }
+
+        run(&line);
     }
+
+    Ok(())
 }
 
-
-
-fn runFile(args: &str) -> _ {
-    todo!()
-}
-
-fn run(input: &str) -> _ {
-    todo!()
+fn run(source: &str) {
+    // Placeholder for Scanner
+    println!("{}", source);
 }
